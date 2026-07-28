@@ -2,9 +2,8 @@
  * Form component for adding/editing expenses
  */
 
-import React from "react";
-import { ExpenseFormData } from "../types";
-import { EXPENSE_CATEGORIES } from "../constants/categories";
+import React, { useState, useEffect } from "react";
+import { ExpenseFormData, Category } from "../types";
 import { TextField, SelectBox, Button } from "../vibes";
 import { useExpenseForm } from "../hooks/useExpenseForm";
 
@@ -39,10 +38,34 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const categoryOptions = EXPENSE_CATEGORIES.map((category) => ({
-    value: category,
-    label: category,
-  }));
+  const [categoryOptions, setCategoryOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/categories");
+
+        if (!response.ok) {
+          throw new Error ("Couldn't fetch categories");
+        }
+
+        const categories: Category[] = await response.json();
+
+        setCategoryOptions(
+          categories.map((category) => ({
+            value: category.name,
+            label: category.name,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch categories: ", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} style={formStyle}>
