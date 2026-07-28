@@ -7,6 +7,7 @@ export interface Expense {
   amount: number;
   description: string;
   category: string;
+  category_icon?: string | null;
   date: string;
   created_at: string;
   updated_at: string;
@@ -47,4 +48,5 @@ export interface Category {
   id: number;
   name: string;
   is_default: boolean;
+  icon?: string | null;
 }

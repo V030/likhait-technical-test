@@ -9,12 +9,15 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   fullWidth?: boolean;
+  variant?: "default" | "underline";
 }
 
 export function TextField({
   label,
   error,
   fullWidth = false,
+  variant = "default",
+  type,
   ...props
 }: TextFieldProps) {
   const containerStyle: React.CSSProperties = {
@@ -31,14 +34,27 @@ export function TextField({
   };
 
   const inputStyle: React.CSSProperties = {
-    padding: "0.5rem 0.75rem",
+    padding: variant === "underline" ? 0 : "0.5rem 0.75rem",
     fontSize: "1rem",
-    border: `1px solid ${error ? COLORS.danger : COLORS.border}`,
-    borderRadius: "0.375rem",
+    border:
+      variant === "underline"
+        ? "none"
+        : `1px solid ${error ? COLORS.danger : COLORS.border}`,
+    borderBottom:
+      variant === "underline"
+        ? `1px solid ${error ? COLORS.danger : COLORS.border}`
+        : undefined,
+    borderRadius: variant === "underline" ? 0 : "0.375rem",
     outline: "none",
     transition: "border-color 0.2s",
-    backgroundColor: COLORS.background.main,
+    boxShadow: "none",
+    appearance: type === "date" ? "none" : undefined,
+    WebkitAppearance: type === "date" ? "none" : undefined,
+    backgroundColor:
+      variant === "underline" ? "transparent" : COLORS.background.main,
     color: COLORS.text.primary,
+    margin: 0,
+    width: "100%",
   };
 
   const errorStyle: React.CSSProperties = {
@@ -50,7 +66,7 @@ export function TextField({
   return (
     <div style={containerStyle}>
       {label && <label style={labelStyle}>{label}</label>}
-      <input style={inputStyle} {...props} />
+      <input type={type} style={inputStyle} {...props} />
       {error && <span style={errorStyle}>{error}</span>}
     </div>
   );

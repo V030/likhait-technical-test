@@ -45,6 +45,65 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 /**
+ * Create a new category
+ */
+export async function createCategory(
+  name: string,
+  icon?: string,
+): Promise<Category> {
+  const response = await fetch(`${API_BASE_URL}/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ category: { name, icon } }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create category");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update a category
+ */
+export async function updateCategory(
+  id: number,
+  name: string,
+  icon?: string,
+): Promise<Category> {
+  const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ category: { name, icon } }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update category");
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete (soft-delete) a category
+ */
+export async function deleteCategory(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete category");
+  }
+}
+
+
+/**
  * Create a new expense
  */
 export async function createExpense(data: ExpenseFormData): Promise<Expense> {

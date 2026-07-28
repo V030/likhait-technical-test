@@ -9,12 +9,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "success";
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
+  loading?: boolean;
+  loadingText?: React.ReactNode;
 }
 
 export function Button({
   variant = "primary",
   size = "medium",
   fullWidth = false,
+  loading = false,
+  loadingText,
   children,
   disabled,
   ...props
@@ -64,8 +68,8 @@ export function Button({
     ...getSizeStyles(),
     width: fullWidth ? "100%" : "auto",
     borderRadius: "0.375rem",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.6 : 1,
+    cursor: disabled || loading ? "not-allowed" : "pointer",
+    opacity: disabled || loading ? 0.6 : 1,
     fontWeight: 600,
     transition: "all 0.2s",
     display: "inline-flex",
@@ -74,9 +78,11 @@ export function Button({
     gap: "0.5rem",
   };
 
+  const content = loading ? loadingText ?? children : children;
+
   return (
-    <button style={styles} disabled={disabled} {...props}>
-      {children}
+    <button style={styles} disabled={disabled || loading} aria-busy={loading} {...props}>
+      {content}
     </button>
   );
 }

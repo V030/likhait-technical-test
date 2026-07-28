@@ -2,10 +2,14 @@
  * Form component for adding/editing expenses
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExpenseFormData, Category } from "../types";
-import { TextField, SelectBox, Button } from "../vibes";
+import { TextField, Button } from "../vibes";
+import { COLORS } from "../constants/colors";
+import { createCategory, fetchCategories } from "../services/api";
 import { useExpenseForm } from "../hooks/useExpenseForm";
+import { getCategoryIconComponent } from "../constants/categoryIcons";
 
 interface ExpenseFormProps {
   initialData?: Partial<ExpenseFormData>;
@@ -26,6 +30,21 @@ export function ExpenseForm({
       onSubmit,
     });
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement | null>(null);
+  const categoryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownRect, setDropdownRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
   const formStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -38,34 +57,170 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const [categoryOptions, setCategoryOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
-
   useEffect(() => {
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/categories");
-
-        if (!response.ok) {
-          throw new Error ("Couldn't fetch categories");
-        }
-
-        const categories: Category[] = await response.json();
-
-        setCategoryOptions(
-          categories.map((category) => ({
-            value: category.name,
-            label: category.name,
-          }))
-        );
+        const data = await fetchCategories();
+        setCategories(data);
       } catch (err) {
         console.error("Failed to fetch categories: ", err);
       }
     };
 
-    fetchCategories();
+    loadCategories();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node) &&
+        !categoryMenuRef.current?.contains(event.target as Node)
+      ) {
+        setIsCategoryOpen(false);
+        setIsCreatingCategory(false);
+        setCategoryError(null);
+        setNewCategoryName("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedCategory = categories.find(
+    (category) => category.name === formData.category,
+  );
+  const selectedCategoryLabel = selectedCategory?.name || "Select category";
+  const SelectedCategoryIcon = getCategoryIconComponent(
+    selectedCategory?.icon,
+    selectedCategory?.name,
+  );
+
+  const openCategoryMenu = () => {
+    const rect = categoryButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDropdownRect({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+    setIsCategoryOpen((open) => !open);
+    setCategoryError(null);
+  };
+
+  const handleCreateCategory = async () => {
+    const trimmedName = newCategoryName.trim();
+    if (!trimmedName) return;
+
+    try {
+      setIsSavingCategory(true);
+      setCategoryError(null);
+      const createdCategory = await createCategory(trimmedName, "Package");
+      setCategories((currentCategories) => [...currentCategories, createdCategory]);
+      handleChange("category", createdCategory.name);
+      setNewCategoryName("");
+      setIsCreatingCategory(false);
+      setIsCategoryOpen(false);
+    } catch {
+      setCategoryError("Failed to create category.");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  const categoryDropdownStyle: React.CSSProperties = {
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  };
+
+  const categoryButtonStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.5rem 0.75rem",
+    fontSize: "1rem",
+    border: `1px solid ${errors.category ? COLORS.danger : COLORS.border}`,
+    borderRadius: "0.375rem",
+    outline: "none",
+    backgroundColor: COLORS.background.main,
+    color: formData.category ? COLORS.text.primary : COLORS.text.light,
+    textAlign: "left",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+  };
+
+  const categoryIconStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    color: COLORS.primary.p05,
+    flexShrink: 0,
+  };
+
+  const categoryMenuStyle: React.CSSProperties = {
+    position: "fixed",
+    top: dropdownRect ? dropdownRect.top : 0,
+    left: dropdownRect ? dropdownRect.left : 0,
+    width: dropdownRect ? dropdownRect.width : "18rem",
+    zIndex: 1205,
+    backgroundColor: COLORS.background.main,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: "0.5rem",
+    boxShadow: "0 12px 30px rgba(0, 0, 0, 0.16)",
+    overflow: "hidden",
+  };
+
+  const categoryListStyle: React.CSSProperties = {
+    maxHeight: "14rem",
+    overflowY: "auto",
+  };
+
+  const categoryScrollClass = "expense-form-category-scroll";
+
+  const categoryItemStyle: React.CSSProperties = {
+    width: "100%",
+    border: "none",
+    background: "transparent",
+    textAlign: "left",
+    padding: "0.7rem 0.8rem",
+    cursor: "pointer",
+    color: COLORS.text.primary,
+  };
+
+  const categoryItemHoverStyle: React.CSSProperties = {
+    backgroundColor: COLORS.background.hover,
+  };
+
+  const newCategoryRowStyle: React.CSSProperties = {
+    borderTop: `1px solid ${COLORS.border}`,
+    padding: "0.6rem 0.8rem",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "0.6rem",
+    minHeight: "3rem",
+  };
+
+  const newCategoryButtonStyle: React.CSSProperties = {
+    ...categoryItemStyle,
+    borderTop: `1px solid ${COLORS.border}`,
+    color: COLORS.primary.p05,
+    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.95rem 0.8rem",
+  };
+
+  const smallActionRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "flex-end",
+  };
 
   return (
     <form onSubmit={handleSubmit} style={formStyle}>
@@ -92,15 +247,146 @@ export function ExpenseForm({
         required
       />
 
-      <SelectBox
-        label="Category"
-        options={categoryOptions}
-        value={formData.category}
-        onChange={(e) => handleChange("category", e.target.value)}
-        error={errors.category}
-        fullWidth
-        required
-      />
+      <div style={categoryDropdownStyle} ref={categoryDropdownRef}>
+        <label style={{ fontSize: "0.875rem", fontWeight: 600, color: COLORS.text.primary }}>
+          Category
+        </label>
+        <button
+          ref={categoryButtonRef}
+          type="button"
+          style={categoryButtonStyle}
+          onClick={openCategoryMenu}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+            <span style={categoryIconStyle}>
+              <SelectedCategoryIcon size={18} weight="fill" />
+            </span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {selectedCategoryLabel}
+            </span>
+          </span>
+          <span style={{ color: COLORS.text.light }}>▾</span>
+        </button>
+        {errors.category && (
+          <span style={{ fontSize: "0.75rem", color: COLORS.danger, marginTop: "-0.25rem" }}>
+            {errors.category}
+          </span>
+        )}
+        {isCategoryOpen && (
+          createPortal(
+            <div ref={categoryMenuRef} style={categoryMenuStyle}>
+              <style>{`
+                .${categoryScrollClass}::-webkit-scrollbar { width: 4px; }
+                .${categoryScrollClass}::-webkit-scrollbar-track { background: transparent; }
+                .${categoryScrollClass}::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+                .${categoryScrollClass} { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.12) transparent; }
+              `}</style>
+              <div className={categoryScrollClass} style={categoryListStyle}>
+                {categories.length > 0 ? (
+                  categories.map((category) => {
+                    const isSelected = category.name === formData.category;
+                    const CategoryIcon = getCategoryIconComponent(category.icon, category.name);
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        style={{
+                          ...categoryItemStyle,
+                          ...(isSelected ? categoryItemHoverStyle : {}),
+                          fontWeight: isSelected ? 600 : 400,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.6rem",
+                        }}
+                        onClick={() => {
+                          handleChange("category", category.name);
+                          setIsCategoryOpen(false);
+                          setIsCreatingCategory(false);
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = COLORS.background.hover;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }
+                        }}
+                      >
+                        <span style={categoryIconStyle}>
+                          <CategoryIcon size={18} weight="fill" />
+                        </span>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {category.name}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div style={{ padding: "0.8rem", color: COLORS.text.light, fontSize: "0.875rem" }}>
+                    No categories yet.
+                  </div>
+                )}
+              </div>
+
+              {isCreatingCategory ? (
+                <div style={newCategoryRowStyle}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <TextField
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Category name"
+                      autoFocus
+                      fullWidth
+                      variant="underline"
+                    />
+                  </div>
+                  {categoryError && (
+                    <span style={{ fontSize: "0.75rem", color: COLORS.danger }}>
+                      {categoryError}
+                    </span>
+                  )}
+                  <div style={smallActionRowStyle}>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="small"
+                      loading={isSavingCategory}
+                      loadingText="Saving..."
+                      onClick={handleCreateCategory}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="small"
+                      onClick={() => {
+                        setIsCreatingCategory(false);
+                        setNewCategoryName("");
+                        setCategoryError(null);
+                      }}
+                      disabled={isSavingCategory}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  style={newCategoryButtonStyle}
+                  onClick={() => setIsCreatingCategory(true)}
+                >
+                  + Add category
+                </button>
+              )}
+            </div>,
+            document.body,
+          )
+        )}
+      </div>
 
       <TextField
         label="Date"
