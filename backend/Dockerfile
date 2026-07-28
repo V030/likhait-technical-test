@@ -9,11 +9,22 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential ca-certificates default-mysql-client default-libmysqlclient-dev git && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    ca-certificates \
+    default-mysql-client \
+    default-libmysqlclient-dev \
+    libyaml-dev \
+    git && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
+
+# Install matching Bundler version
+RUN gem install bundler -v 2.6.8
+
+ENV PATH="/rails/vendor/bundle/ruby/3.3.0/bin:$PATH"    
 
 # Configure bundler and install gems with retry logic
 RUN bundle config set --local deployment 'false' && \
@@ -31,4 +42,9 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start the server by default
 EXPOSE 3000
-CMD ["rails", "server", "-b", "0.0.0.0"]
+
+ENV BUNDLE_PATH=/rails/vendor/bundle
+ENV BUNDLE_BIN=/rails/vendor/bundle/bin
+ENV PATH="/rails/vendor/bundle/bin:$PATH"
+
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
