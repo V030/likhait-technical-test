@@ -6,6 +6,7 @@ import { MonthNavigation } from "../components/MonthNavigation";
 import CategoryBreakdown from "../components/CategoryBreakdown";
 import { CalendarExpenseTable } from "../components/CalendarExpenseTable";
 import { ExpenseForm } from "../components/ExpenseForm";
+import { ManageCategoriesModal } from "../components/ManageCategoriesModal";
 import { Modal, Button } from "../vibes";
 import { COLORS } from "../constants/colors";
 
@@ -13,6 +14,7 @@ const HistoryPage: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
   // Get year and month from URL params, default to current date if not provided
   const getInitialYearMonth = () => {
@@ -87,13 +89,26 @@ const HistoryPage: React.FC = () => {
     (acc, expense) => {
       const category = expense.category || "Uncategorized";
       if (!acc[category]) {
-        acc[category] = { category, amount: 0, count: 0 };
+        acc[category] = {
+          category,
+          category_icon: expense.category_icon ?? null,
+          amount: 0,
+          count: 0,
+        };
       }
       acc[category].amount += Number(expense.amount);
       acc[category].count += 1;
       return acc;
     },
-    {} as Record<string, { category: string; amount: number; count: number }>,
+    {} as Record<
+      string,
+      {
+        category: string;
+        category_icon: string | null;
+        amount: number;
+        count: number;
+      }
+    >,
   );
 
   const categories = Object.values(categoryData).sort(
@@ -119,6 +134,13 @@ const HistoryPage: React.FC = () => {
     display: "flex",
     alignItems: "center",
     gap: "24px",
+  };
+
+  const headerActionsStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
   };
 
   const titleStyle: React.CSSProperties = {
@@ -148,9 +170,15 @@ const HistoryPage: React.FC = () => {
             onYearChange={handleYearChange}
           />
         </div>
-        <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-          Add Expense
-        </Button>
+        <div style={headerActionsStyle}>
+          <Button variant="secondary" onClick={() => setIsManageModalOpen(true)}>
+            Manage Categories
+          </Button>
+
+          <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            Add Expense
+          </Button>
+        </div>
       </div>
 
       <MonthNavigation
@@ -189,6 +217,12 @@ const HistoryPage: React.FC = () => {
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
+
+      <ManageCategoriesModal
+        isOpen={isManageModalOpen}
+        onCategoriesUpdated={fetchExpenses}
+        onClose={() => setIsManageModalOpen(false)}
+      />
     </div>
   );
 };

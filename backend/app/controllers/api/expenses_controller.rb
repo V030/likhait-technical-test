@@ -51,7 +51,7 @@ class Api::ExpensesController < ApplicationController
     {
       id: expense.id,
       description: expense.description,
-      amount: expense.amount.to_f,
+      amount: expense.amount.to_s,
       category: expense.category.name,
       date: expense.date.to_s,
       created_at: expense.created_at,

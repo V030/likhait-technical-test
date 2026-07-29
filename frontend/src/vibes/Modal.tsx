@@ -10,7 +10,9 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: string;
+  maxHeight?: string;
 }
 
 export function Modal({
@@ -18,7 +20,9 @@ export function Modal({
   onClose,
   title,
   children,
+  footer,
   maxWidth = "500px",
+  maxHeight = "90vh",
 }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -59,8 +63,10 @@ export function Modal({
     padding: "1.5rem",
     maxWidth,
     width: "90%",
-    maxHeight: "90vh",
-    overflow: "auto",
+    maxHeight,
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
   };
 
@@ -98,7 +104,15 @@ export function Modal({
             </button>
           </div>
         )}
-        {children}
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, flexShrink: 0 }} />
+        <div className="modal-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+          {children}
+        </div>
+        {footer && (
+          <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

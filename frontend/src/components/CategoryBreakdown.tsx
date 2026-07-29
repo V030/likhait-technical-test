@@ -1,9 +1,10 @@
 import React from "react";
-import { CATEGORY_EMOJIS } from "../constants/categoryEmojis";
+import { getCategoryIconComponent } from "../constants/categoryIcons";
 import { COLORS } from "../constants/colors";
 
 interface CategoryData {
   category: string;
+  category_icon?: string | null;
   amount: number;
   count: number;
 }
@@ -106,6 +107,7 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
     justifyContent: "center",
     background: "white",
     borderRadius: "10px",
+    color: COLORS.primary.p05,
     boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
   };
 
@@ -171,7 +173,7 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
             viewBox="0 0 16 16"
             fill="currentColor"
             style={{
-              transform: isCollapsed ? "rotate(180deg)" : "rotate(0deg)",
+              transform: isCollapsed ? "rotate(0deg)" : "rotate(180deg)",
               transition: "transform 0.2s",
             }}
           >
@@ -200,7 +202,7 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
             >
               <div style={itemInfoStyle}>
                 <span style={itemIconStyle}>
-                  {CATEGORY_EMOJIS[category.category] || "📊"}
+                  {React.createElement(getCategoryIconComponent(category.category_icon, category.category), { size: 32, weight: "fill" })}
                 </span>
                 <div style={itemDetailsStyle}>
                   <div style={itemNameStyle}>{category.category}</div>

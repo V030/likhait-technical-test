@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { Expense, ExpenseFormData } from "../types";
 import { formatCurrency, formatDate } from "../utils/expenseUtils";
-import { getCategoryEmoji } from "../constants/categoryEmojis";
+import { getCategoryIconComponent } from "../constants/categoryIcons";
 import { COLORS } from "../constants/colors";
 import { Button, Modal, Pagination } from "../vibes";
 import { ExpenseForm } from "./ExpenseForm.tsx";
@@ -142,12 +142,14 @@ export function CalendarExpenseTable({
                     gap: "0.5rem",
                   }}
                 >
-                  <span>{getCategoryEmoji(expense.category)}</span>
+                  <span style={{ color: COLORS.primary.p05, display: "flex", transform: "translateY(1px)" }}>
+                    {React.createElement(getCategoryIconComponent(expense.category_icon, expense.category), { size: 20, weight: "fill" })}
+                  </span>
                   <span>{expense.category}</span>
                 </span>
               </td>
               <td style={{ ...tdStyle, textAlign: "left", fontWeight: 600 }}>
-                {formatCurrency(expense.amount)}
+                {formatCurrency(Number(expense.amount))}
               </td>
               <td style={{ ...tdStyle, textAlign: "center" }}>
                 <div style={actionButtonsStyle}>
@@ -189,7 +191,7 @@ export function CalendarExpenseTable({
         {editingExpense && (
           <ExpenseForm
             initialData={{
-              amount: editingExpense.amount.toString(),
+              amount: editingExpense.amount,
               description: editingExpense.description,
               category: editingExpense.category,
               date: formatDate(new Date(editingExpense.date)),
@@ -219,7 +221,7 @@ export function CalendarExpenseTable({
           {deletingExpense && (
             <p style={{ marginBottom: "1.5rem", color: COLORS.text.secondary }}>
               <strong>{deletingExpense.description}</strong> -{" "}
-              {formatCurrency(deletingExpense.amount)}
+              {formatCurrency(Number(deletingExpense.amount))}
             </p>
           )}
           <div
