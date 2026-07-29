@@ -173,7 +173,7 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
             viewBox="0 0 16 16"
             fill="currentColor"
             style={{
-              transform: isCollapsed ? "rotate(180deg)" : "rotate(0deg)",
+              transform: isCollapsed ? "rotate(0deg)" : "rotate(180deg)",
               transition: "transform 0.2s",
             }}
           >

@@ -33,29 +33,35 @@ export function TextField({
     color: COLORS.text.primary,
   };
 
-  const inputStyle: React.CSSProperties = {
-    padding: variant === "underline" ? 0 : "0.5rem 0.75rem",
+  const baseInputStyle: React.CSSProperties = {
     fontSize: "1rem",
-    border:
-      variant === "underline"
-        ? "none"
-        : `1px solid ${error ? COLORS.danger : COLORS.border}`,
-    borderBottom:
-      variant === "underline"
-        ? `1px solid ${error ? COLORS.danger : COLORS.border}`
-        : undefined,
-    borderRadius: variant === "underline" ? 0 : "0.375rem",
     outline: "none",
     transition: "border-color 0.2s",
     boxShadow: "none",
-    appearance: type === "date" ? "none" : undefined,
-    WebkitAppearance: type === "date" ? "none" : undefined,
-    backgroundColor:
-      variant === "underline" ? "transparent" : COLORS.background.main,
     color: COLORS.text.primary,
     margin: 0,
     width: "100%",
   };
+
+  const inputStyle: React.CSSProperties =
+    variant === "underline"
+      ? {
+          ...baseInputStyle,
+          padding: 0,
+          border: "none",
+          borderBottom: `1px solid ${error ? COLORS.danger : COLORS.border}`,
+          borderRadius: 0,
+          backgroundColor: "transparent",
+          appearance: type === "date" ? "none" : undefined,
+          WebkitAppearance: type === "date" ? "none" : undefined,
+        }
+      : {
+          ...baseInputStyle,
+          padding: "0.5rem 0.75rem",
+          border: `1px solid ${error ? COLORS.danger : COLORS.border}`,
+          borderRadius: "0.375rem",
+          backgroundColor: COLORS.background.main,
+        };
 
   const errorStyle: React.CSSProperties = {
     fontSize: "0.75rem",
